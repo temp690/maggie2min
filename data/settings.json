@@ -1,0 +1,30 @@
+{
+  "storeName": "Crave O'Clock",
+  "tagline": "Hot Maggi & Midnight Pasta Delivered To Your Room Door",
+  "hostelName": "Boys Hostel 2 / Campus Residences",
+  "pickupLocation": "Room 304, 3rd Floor, Block B",
+  "adminPhone": "919322908622",
+  "adminPin": "hostel123",
+  "upiId": "8208500480@ybl",
+  "upiName": "Gunjan",
+  "deliveryFee": 0,
+  "storeSchedule": {
+    "autoScheduleEnabled": false,
+    "openTime": "22:00",
+    "closeTime": "04:00"
+  },
+  "statusOverride": {
+    "isManualOverride": true,
+    "isOpen": true
+  },
+  "emergencyControls": {
+    "isPaused": false,
+    "pauseTitle": "Orders Temporarily Paused",
+    "pauseMessage": "electricity cut out",
+    "highDemandBanner": {
+      "enabled": false,
+      "message": "🔥 High demand rush! Maggi prep time is currently ~20-25 mins."
+    }
+  },
+  "whatsappWebhookUrl": ""
+}

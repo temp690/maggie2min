@@ -1,0 +1,37 @@
+[
+  {
+    "id": "sug-egg-maggi",
+    "title": "Double Egg Bhurji Maggi",
+    "description": "Scrambled spiced eggs tossed with hot Maggi noodles",
+    "icon": "🍳",
+    "votes": 37
+  },
+  {
+    "id": "sug-peri-peri-fries",
+    "title": "Crispy Peri Peri Fries",
+    "description": "Golden salted fries tossed in fiery Peri-Peri seasoning",
+    "icon": "🍟",
+    "votes": 28
+  },
+  {
+    "id": "sug-grilled-sandwich",
+    "title": "Grilled Cheese & Corn Sandwich",
+    "description": "Crispy toasted bread loaded with melted cheese and sweet corn",
+    "icon": "🥪",
+    "votes": 25
+  },
+  {
+    "id": "sug-garlic-bread",
+    "title": "Cheesy Garlic Breadsticks",
+    "description": "Toasted garlic bread slices topped with herbs and mozzarella",
+    "icon": "🧄",
+    "votes": 19
+  },
+  {
+    "id": "sug-cutting-chai",
+    "title": "Midnight Cutting Chai & Bournvita",
+    "description": "Kadak ginger elaichi tea or hot piping Bournvita milk",
+    "icon": "☕",
+    "votes": 22
+  }
+]

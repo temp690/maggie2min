@@ -1,0 +1,138 @@
+{
+  "categories": [
+    {
+      "id": "maggi",
+      "name": "Midnight Maggi",
+      "icon": "Soup",
+      "description": "Hot, freshly cooked 2-minute bliss with signature hostel spices",
+      "items": [
+        {
+          "id": "item-plain-maggi",
+          "name": "Plain Maggi (Classic)",
+          "basePrice": 30,
+          "category": "maggi",
+          "available": true,
+          "tag": "Hostel Classic",
+          "image": "🍜",
+          "description": "The quintessential late-night hostel fuel. Prepared fresh with original tastemaker.",
+          "addons": [
+            {
+              "id": "addon-flakes-4",
+              "name": "Oregano & Chili Flakes",
+              "price": 4,
+              "type": "flavor",
+              "icon": "🌿"
+            },
+            {
+              "id": "addon-masala-3",
+              "name": "Extra Magic Masala",
+              "price": 3,
+              "type": "flavor",
+              "icon": "🧂"
+            }
+          ]
+        },
+        {
+          "id": "item-cheese-maggi",
+          "name": "Cheese Maggi",
+          "basePrice": 45,
+          "category": "maggi",
+          "available": true,
+          "tag": "Most Loved",
+          "image": "🧀",
+          "description": "Rich and gooey Maggi loaded with a melted cheese slice.",
+          "addons": [
+            {
+              "id": "addon-schezwan-5",
+              "name": "Schezwan Sauce Toss",
+              "price": 5,
+              "type": "flavor",
+              "icon": "🌶️"
+            },
+            {
+              "id": "addon-flakes-4",
+              "name": "Oregano & Chili Flakes",
+              "price": 4,
+              "type": "flavor",
+              "icon": "🌿"
+            },
+            {
+              "id": "addon-masala-3",
+              "name": "Extra Magic Masala",
+              "price": 3,
+              "type": "flavor",
+              "icon": "🧂"
+            }
+          ]
+        },
+        {
+          "id": "item-schezwan-maggi",
+          "name": "Schezwan Maggi",
+          "basePrice": 40,
+          "category": "maggi",
+          "available": true,
+          "tag": "Spicy Hit",
+          "image": "🌶️",
+          "description": "Spicy, garlicky Schezwan wok-tossed Maggi for midnight cravings.",
+          "addons": [
+            {
+              "id": "addon-flakes-4",
+              "name": "Oregano & Chili Flakes",
+              "price": 4,
+              "type": "flavor",
+              "icon": "🌿"
+            },
+            {
+              "id": "addon-masala-3",
+              "name": "Extra Magic Masala",
+              "price": 3,
+              "type": "flavor",
+              "icon": "🧂"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pasta",
+      "name": "Midnight Pasta",
+      "icon": "Utensils",
+      "description": "Warm, creamy and saucy pasta cooked fresh in the hostel setup",
+      "items": [
+        {
+          "id": "item-midnight-pasta",
+          "name": "Midnight Masala / Red Pasta",
+          "basePrice": 50,
+          "category": "pasta",
+          "available": true,
+          "tag": "Chef Special",
+          "image": "🍝",
+          "description": "Tangy and savory macaroni pasta tossed in rich tomato herbs and spices.",
+          "addons": [
+            {
+              "id": "addon-cheese-pasta-10",
+              "name": "Melted Cheese Slice",
+              "price": 10,
+              "type": "topping",
+              "icon": "🧀"
+            },
+            {
+              "id": "addon-flakes-pasta-5",
+              "name": "Oregano & Chili Flakes",
+              "price": 5,
+              "type": "flavor",
+              "icon": "🌿"
+            },
+            {
+              "id": "addon-masala-pasta-3",
+              "name": "Extra Magic Masala",
+              "price": 3,
+              "type": "flavor",
+              "icon": "🧂"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
