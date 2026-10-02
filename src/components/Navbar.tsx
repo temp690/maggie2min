@@ -56,11 +56,6 @@ export default function Navbar({
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-slate-400 flex items-center">
-                <span>{hostelName}</span>
-                <span className="mx-1.5 text-slate-600">•</span>
-                <span className="text-amber-400/90 font-medium">Midnight Delivery</span>
-              </p>
             </div>
           </Link>
 
