@@ -33,6 +33,7 @@ export default function OrderTrackingPage() {
   const [copied, setCopied] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [hasPromptedReview, setHasPromptedReview] = useState(false);
 
   const fetchOrder = async (isManual = false) => {
     if (isManual) setIsRefreshing(true);
@@ -44,9 +45,20 @@ export default function OrderTrackingPage() {
         throw new Error(data.error || 'Order not found');
       }
 
-      setOrder(data.order);
+      const currentOrder: Order = data.order;
+      setOrder(currentOrder);
       if (data.storePhone) setStorePhone(data.storePhone);
       setError('');
+
+      // When the order status is 'delivered', prompt the customer for review
+      if (currentOrder.status === 'delivered') {
+        const reviewDismissedKey = `hnb_reviewed_${currentOrder.id}`;
+        const alreadyDismissed = typeof window !== 'undefined' && localStorage.getItem(reviewDismissedKey);
+        if (!alreadyDismissed && !hasPromptedReview) {
+          setHasPromptedReview(true);
+          setIsReviewOpen(true);
+        }
+      }
     } catch (err: any) {
       setError(err.message || 'Unable to load order status.');
     } finally {
@@ -199,6 +211,28 @@ export default function OrderTrackingPage() {
           deliveryType={order.deliveryType}
           paymentRef={order.paymentRef}
         />
+
+        {/* Delivered Celebration & Review Prompt Card */}
+        {order.status === 'delivered' && (
+          <div className="bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-amber-500/15 border border-amber-500/40 rounded-3xl p-5 shadow-xl text-center space-y-3 animate-in fade-in">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center mx-auto text-2xl shadow">
+              🎉
+            </div>
+            <div>
+              <h3 className="text-base font-black text-white">Your Order Has Arrived!</h3>
+              <p className="text-xs text-slate-300 mt-1 max-w-sm mx-auto">
+                Hope you enjoy your hot midnight bite! Please take 10 seconds to rate the food & service.
+              </p>
+            </div>
+            <button
+              onClick={() => setIsReviewOpen(true)}
+              className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center space-x-2 mx-auto shadow-lg shadow-amber-500/25 active:scale-95 transition-all"
+            >
+              <Star className="w-4 h-4 fill-slate-950" />
+              <span>Rate & Review Food Now</span>
+            </button>
+          </div>
+        )}
 
         {/* Room / Delivery Destination */}
         <div className="bg-midnight-900/90 border border-slate-800 rounded-3xl p-5 shadow-md space-y-3">

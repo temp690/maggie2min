@@ -87,6 +87,9 @@ export default function AdminPage() {
   const [newDesc, setNewDesc] = useState('');
   const [newIcon, setNewIcon] = useState('🍽️');
 
+  // Review management state
+  const [editingReview, setEditingReview] = useState<CustomerReview | null>(null);
+
   useEffect(() => {
     const savedPin = localStorage.getItem('hnb_admin_pin');
     if (savedPin) {
@@ -431,6 +434,59 @@ export default function AdminPage() {
       }
     } catch (err) {
       console.error('Create suggestion error:', err);
+    }
+  };
+
+  // Review CRUD handlers
+  const handleUpdateReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingReview) return;
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-pin': pin,
+        },
+        body: JSON.stringify({
+          id: editingReview.id,
+          customerName: editingReview.customerName,
+          roomNumber: editingReview.roomNumber,
+          rating: Number(editingReview.rating),
+          comment: editingReview.comment,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.review) {
+        setReviews((prev) =>
+          prev.map((r) => (r.id === editingReview.id ? data.review : r))
+        );
+        setEditingReview(null);
+        setActionNotice('Review updated! ✅');
+        setTimeout(() => setActionNotice(''), 3000);
+      }
+    } catch (err) {
+      console.error('Update review error:', err);
+    }
+  };
+
+  const handleDeleteReview = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this review?')) return;
+    try {
+      const res = await fetch(`/api/reviews?id=${id}&adminPin=${pin}`, {
+        method: 'DELETE',
+        headers: {
+          'x-admin-pin': pin,
+        },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setReviews((prev) => prev.filter((r) => r.id !== id));
+        setActionNotice('Review deleted! 🗑️');
+        setTimeout(() => setActionNotice(''), 3000);
+      }
+    } catch (err) {
+      console.error('Delete review error:', err);
     }
   };
 
@@ -1179,12 +1235,116 @@ export default function AdminPage() {
         {/* ============================================================ */}
         {activeTab === 'reviews' && (
           <div className="space-y-4 max-w-2xl">
-            <h3 className="text-base font-bold text-white">Student Reviews & Ratings</h3>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-white">Student Reviews & Ratings</h3>
+                <p className="text-xs text-slate-400">
+                  Manage student reviews. You can edit comments, ratings or remove outdated/inappropriate reviews:
+                </p>
+              </div>
+            </div>
+
+            {/* Edit Review Modal */}
+            {editingReview && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+                <div className="w-full max-w-md bg-midnight-900 border border-slate-700 rounded-3xl p-5 shadow-2xl space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                    <h4 className="text-sm font-bold text-white flex items-center space-x-2">
+                      <Edit className="w-4 h-4 text-amber-400" />
+                      <span>Edit Student Review</span>
+                    </h4>
+                    <button
+                      onClick={() => setEditingReview(null)}
+                      className="p-1 text-slate-400 hover:text-white"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleUpdateReview} className="space-y-3 text-xs">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-slate-400 mb-1">Student Name</label>
+                        <input
+                          type="text"
+                          required
+                          value={editingReview.customerName}
+                          onChange={(e) => setEditingReview({ ...editingReview, customerName: e.target.value })}
+                          className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-400 mb-1">Room No.</label>
+                        <input
+                          type="text"
+                          value={editingReview.roomNumber || ''}
+                          onChange={(e) => setEditingReview({ ...editingReview, roomNumber: e.target.value })}
+                          placeholder="e.g. Room 314"
+                          className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-400 mb-1">Rating (1 to 5 Stars)</label>
+                      <div className="flex items-center space-x-2 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setEditingReview({ ...editingReview, rating: star })}
+                            className="p-0.5"
+                          >
+                            <Star
+                              className={`w-5 h-5 ${
+                                editingReview.rating >= star
+                                  ? 'fill-amber-400 text-amber-400'
+                                  : 'text-slate-700'
+                              }`}
+                            />
+                          </button>
+                        ))}
+                        <span className="text-amber-400 font-bold ml-2">({editingReview.rating} / 5)</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-400 mb-1">Review Comment</label>
+                      <textarea
+                        required
+                        rows={3}
+                        value={editingReview.comment}
+                        onChange={(e) => setEditingReview({ ...editingReview, comment: e.target.value })}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                      />
+                    </div>
+
+                    <div className="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+                      <button
+                        type="button"
+                        onClick={() => setEditingReview(null)}
+                        className="px-3 py-1.5 rounded-xl border border-slate-700 text-slate-400 hover:text-white"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl flex items-center space-x-1"
+                      >
+                        <Save className="w-3.5 h-3.5" />
+                        <span>Save Changes</span>
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
             {reviews.length === 0 ? (
               <p className="text-xs text-slate-500">No reviews submitted yet.</p>
             ) : (
               reviews.map((rev) => (
-                <div key={rev.id} className="bg-midnight-900 border border-slate-800 rounded-2xl p-4 space-y-1.5">
+                <div key={rev.id} className="bg-midnight-900 border border-slate-800 hover:border-slate-700 rounded-2xl p-4 space-y-2 transition-colors">
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="font-bold text-white text-sm">{rev.customerName}</span>
@@ -1192,10 +1352,32 @@ export default function AdminPage() {
                         <span className="text-xs text-amber-400 ml-2 font-mono">({rev.roomNumber})</span>
                       )}
                     </div>
-                    <div className="flex text-amber-400">
-                      {Array.from({ length: rev.rating }).map((_, i) => (
-                        <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
-                      ))}
+                    <div className="flex items-center space-x-2">
+                      <div className="flex text-amber-400">
+                        {Array.from({ length: rev.rating }).map((_, i) => (
+                          <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
+                        ))}
+                      </div>
+
+                      {/* Edit Button */}
+                      <button
+                        type="button"
+                        onClick={() => setEditingReview({ ...rev })}
+                        className="p-1.5 text-slate-400 hover:text-amber-400 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg transition-colors ml-2"
+                        title="Edit review"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                      </button>
+
+                      {/* Delete Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteReview(rev.id)}
+                        className="p-1.5 text-slate-400 hover:text-rose-400 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg transition-colors"
+                        title="Delete review"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                   <p className="text-xs text-slate-300 italic">&ldquo;{rev.comment}&rdquo;</p>

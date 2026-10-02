@@ -333,6 +333,31 @@ export async function addReview(
   return newReview;
 }
 
+export async function updateReview(
+  id: string,
+  updates: Partial<Pick<CustomerReview, 'rating' | 'comment' | 'customerName' | 'roomNumber'>>
+): Promise<CustomerReview | null> {
+  const reviews = await getReviews();
+  const index = reviews.findIndex((r) => r.id === id);
+  if (index === -1) return null;
+
+  reviews[index] = {
+    ...reviews[index],
+    ...updates,
+    rating: updates.rating !== undefined ? Number(updates.rating) : reviews[index].rating,
+  };
+  await setStoredValue('reviews', reviews, REVIEWS_FILE);
+  return reviews[index];
+}
+
+export async function deleteReview(id: string): Promise<boolean> {
+  const reviews = await getReviews();
+  const filtered = reviews.filter((r) => r.id !== id);
+  if (filtered.length === reviews.length) return false;
+  await setStoredValue('reviews', filtered, REVIEWS_FILE);
+  return true;
+}
+
 // ============================================================================
 // 7. DISH SUGGESTIONS
 // ============================================================================

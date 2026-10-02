@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getReviews, addReview } from '@/lib/db';
+import { getReviews, addReview, updateReview, deleteReview, getSettings } from '@/lib/db';
 
 export async function GET() {
   try {
@@ -33,6 +33,64 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ success: true, review });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const authHeader = request.headers.get('x-admin-pin');
+    const settings = await getSettings();
+
+    if (authHeader !== settings.adminPin && body.adminPin !== settings.adminPin) {
+      return NextResponse.json({ success: false, error: 'Unauthorized: Invalid Admin PIN' }, { status: 401 });
+    }
+
+    const { id, customerName, roomNumber, rating, comment } = body;
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'Review id is required' }, { status: 400 });
+    }
+
+    const updates: any = {};
+    if (customerName !== undefined) updates.customerName = String(customerName).trim();
+    if (roomNumber !== undefined) updates.roomNumber = String(roomNumber).trim();
+    if (rating !== undefined) updates.rating = Number(rating);
+    if (comment !== undefined) updates.comment = String(comment).trim();
+
+    const updated = await updateReview(id, updates);
+    if (!updated) {
+      return NextResponse.json({ success: false, error: 'Review not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, review: updated });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    const authHeader = request.headers.get('x-admin-pin') || searchParams.get('adminPin');
+    const settings = await getSettings();
+
+    if (authHeader !== settings.adminPin) {
+      return NextResponse.json({ success: false, error: 'Unauthorized: Invalid Admin PIN' }, { status: 401 });
+    }
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'id parameter is required' }, { status: 400 });
+    }
+
+    const deleted = await deleteReview(id);
+    if (!deleted) {
+      return NextResponse.json({ success: false, error: 'Review not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, message: 'Review deleted successfully' });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
