@@ -3,7 +3,7 @@ import { getSettings, updateSettings, checkIsStoreOpen } from '@/lib/db';
 
 export async function GET() {
   try {
-    const settings = getSettings();
+    const settings = await getSettings();
     const openCheck = checkIsStoreOpen(settings);
 
     // Public view: hide sensitive admin PIN and webhook
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const authHeader = request.headers.get('x-admin-pin');
-    const currentSettings = getSettings();
+    const currentSettings = await getSettings();
 
     // Verify PIN
     if (authHeader !== currentSettings.adminPin && body.adminPin !== currentSettings.adminPin) {
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     }
 
     const { adminPin: _, ...updates } = body;
-    const updated = updateSettings(updates);
+    const updated = await updateSettings(updates);
 
     return NextResponse.json({ success: true, settings: updated });
   } catch (error: any) {

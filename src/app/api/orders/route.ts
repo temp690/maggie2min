@@ -6,14 +6,14 @@ import { OrderItem } from '@/lib/types';
 export async function GET(request: Request) {
   try {
     const authHeader = request.headers.get('x-admin-pin');
-    const settings = getSettings();
+    const settings = await getSettings();
 
     // Verify admin access
     if (authHeader !== settings.adminPin) {
       return NextResponse.json({ success: false, error: 'Unauthorized: Invalid Admin PIN' }, { status: 401 });
     }
 
-    const orders = getOrders();
+    const orders = await getOrders();
     return NextResponse.json({ success: true, orders });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const settings = getSettings();
+    const settings = await getSettings();
     const storeCheck = checkIsStoreOpen(settings);
 
     // 1. Check store open
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     }
 
     // 4. Server-Side Price Verification (Tamper-Proof)
-    const { categories } = getMenu();
+    const { categories } = await getMenu();
     const allMenuItems = categories.flatMap((c) => c.items);
 
     let calculatedSubtotal = 0;
@@ -133,7 +133,7 @@ export async function POST(request: Request) {
     }
 
     // 7. Create Order
-    const newOrder = createOrder({
+    const newOrder = await createOrder({
       customerName: customerName.trim(),
       roomNumber: roomNumber.trim(),
       phoneNumber: cleanPhone,

@@ -11,6 +11,9 @@ import {
   DishSuggestion,
 } from './types';
 
+// ============================================================================
+// 1. DATA DIRECTORY & FILE FALLBACKS (Used locally or when Upstash is unset)
+// ============================================================================
 const DATA_DIR = path.join(process.cwd(), 'data');
 const MENU_FILE = path.join(DATA_DIR, 'menu.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
@@ -18,9 +21,10 @@ const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
 const REVIEWS_FILE = path.join(DATA_DIR, 'reviews.json');
 const SUGGESTIONS_FILE = path.join(DATA_DIR, 'suggestions.json');
 
-// Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  } catch (_) {}
 }
 
 function safeReadJSON<T>(filePath: string, fallback: T): T {
@@ -38,58 +42,129 @@ function safeReadJSON<T>(filePath: string, fallback: T): T {
 }
 
 function safeWriteJSON<T>(filePath: string, data: T): void {
-  const tempPath = `${filePath}.tmp.${Date.now()}`;
   try {
+    const tempPath = `${filePath}.tmp.${Date.now()}`;
     fs.writeFileSync(tempPath, JSON.stringify(data, null, 2), 'utf-8');
     fs.renameSync(tempPath, filePath);
   } catch (error) {
-    if (fs.existsSync(tempPath)) {
-      try {
-        fs.unlinkSync(tempPath);
-      } catch (_) {}
-    }
     console.error(`Error writing ${filePath}:`, error);
-    throw error;
   }
 }
 
-// ----------------- SETTINGS -----------------
+// ============================================================================
+// 2. UPSTASH REDIS REST API CLIENT (Zero dependencies, works natively on Vercel)
+// Vercel auto-populates UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN
+// (or KV_REST_API_URL and KV_REST_API_TOKEN)
+// ============================================================================
+const REDIS_URL =
+  process.env.UPSTASH_REDIS_REST_URL ||
+  process.env.KV_REST_API_URL ||
+  '';
 
-export function getSettings(): StoreSettings {
-  return safeReadJSON<StoreSettings>(SETTINGS_FILE, {
-    storeName: "Crave O'Clock",
-    tagline: "Hot Maggi & Midnight Pasta Delivered To Your Room Door",
-    hostelName: "Boys Hostel 2 / Campus Residences",
-    pickupLocation: "Room 304, 3rd Floor, Block B",
-    adminPhone: "919876543210",
-    adminPin: "hostel123",
-    upiId: "hostelkitchen@upi",
-    upiName: "Crave O'Clock",
-    deliveryFee: 0,
-    storeSchedule: {
-      autoScheduleEnabled: false,
-      openTime: "22:00",
-      closeTime: "04:00",
-    },
-    statusOverride: {
-      isManualOverride: true,
-      isOpen: true,
-    },
-    emergencyControls: {
-      isPaused: false,
-      pauseTitle: "Orders Temporarily Paused",
-      pauseMessage: "We are boiling water for the next batch! Resuming orders in 15 minutes 🍳",
-      highDemandBanner: {
-        enabled: false,
-        message: "🔥 High demand rush! Maggi prep time is currently ~20-25 mins.",
+const REDIS_TOKEN =
+  process.env.UPSTASH_REDIS_REST_TOKEN ||
+  process.env.KV_REST_API_TOKEN ||
+  '';
+
+const isRedisAvailable = Boolean(REDIS_URL && REDIS_TOKEN);
+
+async function redisCommand<T>(command: any[]): Promise<T | null> {
+  if (!isRedisAvailable) return null;
+  try {
+    const res = await fetch(`${REDIS_URL.replace(/\/$/, '')}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${REDIS_TOKEN}`,
+        'Content-Type': 'application/json',
       },
-    },
-    whatsappWebhookUrl: "",
-  });
+      body: JSON.stringify(command),
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      console.error(`Redis command error: ${res.statusText}`);
+      return null;
+    }
+    const data = await res.json();
+    return (data.result as T) ?? null;
+  } catch (error) {
+    console.error('Upstash Redis request failed:', error);
+    return null;
+  }
 }
 
-export function updateSettings(partial: Partial<StoreSettings>): StoreSettings {
-  const current = getSettings();
+// Low-level helper: Get with fallback to local JSON file
+async function getStoredValue<T>(key: string, fileFallback: T): Promise<T> {
+  if (isRedisAvailable) {
+    const raw = await redisCommand<any>(['GET', key]);
+    if (raw !== null && raw !== undefined) {
+      if (typeof raw === 'string') {
+        try {
+          return JSON.parse(raw) as T;
+        } catch (_) {
+          return raw as any;
+        }
+      }
+      return raw as T;
+    }
+    // Seed initial data from local file into Redis if key is empty
+    if (fileFallback !== null && fileFallback !== undefined) {
+      setStoredValue(key, fileFallback).catch(() => {});
+    }
+  }
+  return fileFallback;
+}
+
+// Low-level helper: Set with write-through to local file
+async function setStoredValue<T>(key: string, value: T, filePath?: string): Promise<void> {
+  if (filePath) {
+    safeWriteJSON(filePath, value);
+  }
+  if (isRedisAvailable) {
+    await redisCommand(['SET', key, JSON.stringify(value)]);
+  }
+}
+
+// ============================================================================
+// 3. SETTINGS
+// ============================================================================
+export const DEFAULT_SETTINGS: StoreSettings = {
+  storeName: "Crave O'Clock",
+  tagline: "Hot Maggi & Midnight Pasta Delivered To Your Room Door",
+  hostelName: "Boys Hostel 2 / Campus Residences",
+  pickupLocation: "Room 304, 3rd Floor, Block B",
+  adminPhone: "919322908622",
+  adminPin: "hostel123",
+  upiId: "8208500480@ybl",
+  upiName: "Gunjan",
+  deliveryFee: 0,
+  storeSchedule: {
+    autoScheduleEnabled: false,
+    openTime: "22:00",
+    closeTime: "04:00",
+  },
+  statusOverride: {
+    isManualOverride: true,
+    isOpen: true,
+  },
+  emergencyControls: {
+    isPaused: false,
+    pauseTitle: "Orders Temporarily Paused",
+    pauseMessage: "Orders are temporarily paused. Resuming soon! 🍳",
+    highDemandBanner: {
+      enabled: false,
+      message: "🔥 High demand rush! Prep time is currently ~20-25 mins.",
+    },
+  },
+  whatsappWebhookUrl: "",
+};
+
+export async function getSettings(): Promise<StoreSettings> {
+  const local = safeReadJSON<StoreSettings>(SETTINGS_FILE, DEFAULT_SETTINGS);
+  return getStoredValue<StoreSettings>('settings', local);
+}
+
+export async function updateSettings(partial: Partial<StoreSettings>): Promise<StoreSettings> {
+  const current = await getSettings();
   const updated: StoreSettings = {
     ...current,
     ...partial,
@@ -110,7 +185,7 @@ export function updateSettings(partial: Partial<StoreSettings>): StoreSettings {
       },
     },
   };
-  safeWriteJSON(SETTINGS_FILE, updated);
+  await setStoredValue('settings', updated, SETTINGS_FILE);
   return updated;
 }
 
@@ -127,7 +202,6 @@ export function checkIsStoreOpen(settings: StoreSettings): { isOpen: boolean; re
     const currentHours = now.getHours().toString().padStart(2, '0');
     const currentMinutes = now.getMinutes().toString().padStart(2, '0');
     const currentTimeStr = `${currentHours}:${currentMinutes}`;
-
     const { openTime, closeTime } = settings.storeSchedule;
 
     let inSchedule = false;
@@ -148,14 +222,16 @@ export function checkIsStoreOpen(settings: StoreSettings): { isOpen: boolean; re
   return { isOpen: true };
 }
 
-// ----------------- MENU -----------------
-
-export function getMenu(): { categories: MenuCategory[] } {
-  return safeReadJSON<{ categories: MenuCategory[] }>(MENU_FILE, { categories: [] });
+// ============================================================================
+// 4. MENU
+// ============================================================================
+export async function getMenu(): Promise<{ categories: MenuCategory[] }> {
+  const local = safeReadJSON<{ categories: MenuCategory[] }>(MENU_FILE, { categories: [] });
+  return getStoredValue<{ categories: MenuCategory[] }>('menu', local);
 }
 
-export function updateMenuItem(itemId: string, updates: Partial<MenuItem>): MenuItem | null {
-  const menuData = safeReadJSON<{ categories: MenuCategory[] }>(MENU_FILE, { categories: [] });
+export async function updateMenuItem(itemId: string, updates: Partial<MenuItem>): Promise<MenuItem | null> {
+  const menuData = await getMenu();
   let updatedItem: MenuItem | null = null;
 
   for (const cat of menuData.categories) {
@@ -164,7 +240,6 @@ export function updateMenuItem(itemId: string, updates: Partial<MenuItem>): Menu
         cat.items[i] = {
           ...cat.items[i],
           ...updates,
-          // ensure basePrice is numeric
           basePrice: updates.basePrice !== undefined ? Number(updates.basePrice) : cat.items[i].basePrice,
         };
         updatedItem = cat.items[i];
@@ -175,26 +250,28 @@ export function updateMenuItem(itemId: string, updates: Partial<MenuItem>): Menu
   }
 
   if (updatedItem) {
-    safeWriteJSON(MENU_FILE, menuData);
+    await setStoredValue('menu', menuData, MENU_FILE);
   }
   return updatedItem;
 }
 
-// ----------------- ORDERS -----------------
-
-export function getOrders(): Order[] {
-  return safeReadJSON<Order[]>(ORDERS_FILE, []);
+// ============================================================================
+// 5. ORDERS
+// ============================================================================
+export async function getOrders(): Promise<Order[]> {
+  const local = safeReadJSON<Order[]>(ORDERS_FILE, []);
+  return getStoredValue<Order[]>('orders', local);
 }
 
-export function getOrderById(id: string): Order | null {
-  const orders = getOrders();
+export async function getOrderById(id: string): Promise<Order | null> {
+  const orders = await getOrders();
   return orders.find((o) => o.id.toUpperCase() === id.toUpperCase()) || null;
 }
 
-export function createOrder(
+export async function createOrder(
   orderPayload: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'updatedAt'>
-): Order {
-  const orders = getOrders();
+): Promise<Order> {
+  const orders = await getOrders();
   const nextNumber = orders.length + 1;
   const shortId = `HNB-${1000 + nextNumber}`;
 
@@ -206,19 +283,18 @@ export function createOrder(
     updatedAt: new Date().toISOString(),
   };
 
-  orders.unshift(newOrder); // newest first
-  safeWriteJSON(ORDERS_FILE, orders);
+  orders.unshift(newOrder);
+  await setStoredValue('orders', orders, ORDERS_FILE);
   return newOrder;
 }
 
-export function updateOrderStatus(
+export async function updateOrderStatus(
   id: string,
   status: OrderStatus,
   paymentStatus?: PaymentStatus
-): Order | null {
-  const orders = getOrders();
+): Promise<Order | null> {
+  const orders = await getOrders();
   const index = orders.findIndex((o) => o.id.toUpperCase() === id.toUpperCase());
-
   if (index === -1) return null;
 
   const current = orders[index];
@@ -231,46 +307,57 @@ export function updateOrderStatus(
   };
 
   orders[index] = updated;
-  safeWriteJSON(ORDERS_FILE, orders);
+  await setStoredValue('orders', orders, ORDERS_FILE);
   return updated;
 }
 
-// ----------------- REVIEWS -----------------
-
-export function getReviews(): CustomerReview[] {
-  return safeReadJSON<CustomerReview[]>(REVIEWS_FILE, []);
+// ============================================================================
+// 6. REVIEWS
+// ============================================================================
+export async function getReviews(): Promise<CustomerReview[]> {
+  const local = safeReadJSON<CustomerReview[]>(REVIEWS_FILE, []);
+  return getStoredValue<CustomerReview[]>('reviews', local);
 }
 
-export function addReview(reviewPayload: Omit<CustomerReview, 'id' | 'createdAt'>): CustomerReview {
-  const reviews = getReviews();
+export async function addReview(
+  reviewPayload: Omit<CustomerReview, 'id' | 'createdAt'>
+): Promise<CustomerReview> {
+  const reviews = await getReviews();
   const newReview: CustomerReview = {
     ...reviewPayload,
     id: `rev-${Date.now()}`,
     createdAt: new Date().toISOString(),
   };
   reviews.unshift(newReview);
-  safeWriteJSON(REVIEWS_FILE, reviews);
+  await setStoredValue('reviews', reviews, REVIEWS_FILE);
   return newReview;
 }
 
-// ----------------- DISH SUGGESTIONS -----------------
-
-export function getSuggestions(): DishSuggestion[] {
-  return safeReadJSON<DishSuggestion[]>(SUGGESTIONS_FILE, []);
+// ============================================================================
+// 7. DISH SUGGESTIONS
+// ============================================================================
+export async function getSuggestions(): Promise<DishSuggestion[]> {
+  const local = safeReadJSON<DishSuggestion[]>(SUGGESTIONS_FILE, []);
+  return getStoredValue<DishSuggestion[]>('suggestions', local);
 }
 
-export function voteSuggestion(suggestionId: string): DishSuggestion | null {
-  const suggestions = getSuggestions();
+export async function voteSuggestion(suggestionId: string): Promise<DishSuggestion | null> {
+  const suggestions = await getSuggestions();
   const item = suggestions.find((s) => s.id === suggestionId);
   if (!item) return null;
 
   item.votes = (item.votes || 0) + 1;
-  safeWriteJSON(SUGGESTIONS_FILE, suggestions);
+  await setStoredValue('suggestions', suggestions, SUGGESTIONS_FILE);
   return item;
 }
 
-export function addCustomSuggestion(title: string, suggestedBy?: string, icon?: string, description?: string): DishSuggestion {
-  const suggestions = getSuggestions();
+export async function addCustomSuggestion(
+  title: string,
+  suggestedBy?: string,
+  icon?: string,
+  description?: string
+): Promise<DishSuggestion> {
+  const suggestions = await getSuggestions();
   const newSug: DishSuggestion = {
     id: `sug-${Date.now()}`,
     title: title.trim(),
@@ -280,12 +367,15 @@ export function addCustomSuggestion(title: string, suggestedBy?: string, icon?: 
     icon: icon ? icon.trim() : '✨',
   };
   suggestions.push(newSug);
-  safeWriteJSON(SUGGESTIONS_FILE, suggestions);
+  await setStoredValue('suggestions', suggestions, SUGGESTIONS_FILE);
   return newSug;
 }
 
-export function updateSuggestion(id: string, updates: Partial<DishSuggestion>): DishSuggestion | null {
-  const suggestions = getSuggestions();
+export async function updateSuggestion(
+  id: string,
+  updates: Partial<DishSuggestion>
+): Promise<DishSuggestion | null> {
+  const suggestions = await getSuggestions();
   const index = suggestions.findIndex((s) => s.id === id);
   if (index === -1) return null;
 
@@ -294,14 +384,14 @@ export function updateSuggestion(id: string, updates: Partial<DishSuggestion>): 
     ...updates,
     votes: updates.votes !== undefined ? Number(updates.votes) : suggestions[index].votes,
   };
-  safeWriteJSON(SUGGESTIONS_FILE, suggestions);
+  await setStoredValue('suggestions', suggestions, SUGGESTIONS_FILE);
   return suggestions[index];
 }
 
-export function deleteSuggestion(id: string): boolean {
-  const suggestions = getSuggestions();
+export async function deleteSuggestion(id: string): Promise<boolean> {
+  const suggestions = await getSuggestions();
   const filtered = suggestions.filter((s) => s.id !== id);
   if (filtered.length === suggestions.length) return false;
-  safeWriteJSON(SUGGESTIONS_FILE, filtered);
+  await setStoredValue('suggestions', filtered, SUGGESTIONS_FILE);
   return true;
 }

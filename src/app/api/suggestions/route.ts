@@ -3,7 +3,7 @@ import { getSuggestions, voteSuggestion, addCustomSuggestion, updateSuggestion, 
 
 export async function GET() {
   try {
-    const suggestions = getSuggestions();
+    const suggestions = await getSuggestions();
     // sort by votes descending
     suggestions.sort((a, b) => (b.votes || 0) - (a.votes || 0));
     return NextResponse.json({ success: true, suggestions });
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
 
     // Upvote existing suggestion (student action)
     if (suggestionId) {
-      const updated = voteSuggestion(suggestionId);
+      const updated = await voteSuggestion(suggestionId);
       if (!updated) {
         return NextResponse.json({ success: false, error: 'Suggestion not found' }, { status: 404 });
       }
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
 
     // Submit new dish idea
     if (title && typeof title === 'string' && title.trim().length > 2) {
-      const created = addCustomSuggestion(title.trim(), suggestedBy, icon, description);
+      const created = await addCustomSuggestion(title.trim(), suggestedBy, icon, description);
       return NextResponse.json({ success: true, suggestion: created });
     }
 
@@ -42,7 +42,7 @@ export async function PATCH(request: Request) {
   try {
     const body = await request.json();
     const authHeader = request.headers.get('x-admin-pin');
-    const settings = getSettings();
+    const settings = await getSettings();
 
     if (authHeader !== settings.adminPin && body.adminPin !== settings.adminPin) {
       return NextResponse.json({ success: false, error: 'Unauthorized: Invalid Admin PIN' }, { status: 401 });
@@ -53,7 +53,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ success: false, error: 'id is required' }, { status: 400 });
     }
 
-    const updated = updateSuggestion(id, { title, description, icon, votes });
+    const updated = await updateSuggestion(id, { title, description, icon, votes });
     if (!updated) {
       return NextResponse.json({ success: false, error: 'Suggestion not found' }, { status: 404 });
     }
@@ -69,7 +69,7 @@ export async function DELETE(request: Request) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     const authHeader = request.headers.get('x-admin-pin') || searchParams.get('adminPin');
-    const settings = getSettings();
+    const settings = await getSettings();
 
     if (authHeader !== settings.adminPin) {
       return NextResponse.json({ success: false, error: 'Unauthorized: Invalid Admin PIN' }, { status: 401 });
@@ -79,7 +79,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ success: false, error: 'id parameter is required' }, { status: 400 });
     }
 
-    const deleted = deleteSuggestion(id);
+    const deleted = await deleteSuggestion(id);
     if (!deleted) {
       return NextResponse.json({ success: false, error: 'Suggestion not found' }, { status: 404 });
     }

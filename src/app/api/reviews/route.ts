@@ -3,7 +3,7 @@ import { getReviews, addReview } from '@/lib/db';
 
 export async function GET() {
   try {
-    const reviews = getReviews();
+    const reviews = await getReviews();
     return NextResponse.json({ success: true, reviews });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Rating must be between 1 and 5 stars.' }, { status: 400 });
     }
 
-    const review = addReview({
+    const review = await addReview({
       orderId: (orderId || '').trim() || undefined,
       customerName: (customerName || '').trim() || 'Hostel Mate',
       roomNumber: (roomNumber || '').trim() || undefined,

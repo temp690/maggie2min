@@ -6,13 +6,13 @@ import { OrderStatus, PaymentStatus } from '@/lib/types';
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
-    const order = getOrderById(id);
+    const order = await getOrderById(id);
 
     if (!order) {
       return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
     }
 
-    const settings = getSettings();
+    const settings = await getSettings();
 
     return NextResponse.json({
       success: true,
@@ -29,7 +29,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   try {
     const { id } = params;
     const authHeader = request.headers.get('x-admin-pin');
-    const settings = getSettings();
+    const settings = await getSettings();
 
     if (authHeader !== settings.adminPin) {
       return NextResponse.json({ success: false, error: 'Unauthorized: Invalid Admin PIN' }, { status: 401 });
@@ -43,7 +43,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       return NextResponse.json({ success: false, error: 'Invalid status' }, { status: 400 });
     }
 
-    const updated = updateOrderStatus(id, status as OrderStatus, paymentStatus as PaymentStatus);
+    const updated = await updateOrderStatus(id, status as OrderStatus, paymentStatus as PaymentStatus);
     if (!updated) {
       return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
     }
