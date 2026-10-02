@@ -560,7 +560,7 @@ export default function AdminPage() {
   });
 
   const totalRevenue = orders
-    .filter((o) => o.status !== 'cancelled' && o.paymentStatus === 'paid')
+    .filter((o) => o.status !== 'cancelled' && (o.paymentStatus === 'paid' || o.paymentStatus === 'cod_verified' || o.status === 'delivered'))
     .reduce((sum, o) => sum + o.total, 0);
 
   return (
@@ -851,7 +851,7 @@ export default function AdminPage() {
                                   ? '⚠️ Unverified Payment'
                                   : order.paymentStatus === 'paid'
                                   ? '✓ Paid & Verified'
-                                  : 'Pay on Delivery'}
+                                  : '💵 Pay at Room Door'}
                               </span>
                             </div>
                             <span className="text-[11px] text-slate-500 block mt-0.5">
@@ -1683,15 +1683,17 @@ export default function AdminPage() {
 
                 <div className="bg-slate-950/50 border border-slate-800 rounded-2xl p-4 space-y-2">
                   <div className="flex items-center space-x-2 text-amber-400 font-bold">
-                    <QrCode className="w-4 h-4" />
-                    <span>How the Dynamic UPI QR Code Works:</span>
+                    <DoorOpen className="w-4 h-4" />
+                    <span>How Room Delivery & Payment at Door Work:</span>
                   </div>
                   <p className="text-slate-400 leading-relaxed text-[11px]">
-                    You do <strong>not</strong> need to upload an image of your QR code!
+                    1. Students order directly to their hostel room with zero checkout friction (no failed online UPI payment blocks).
                     <br />
-                    The application generates a <strong>live official dynamic UPI QR code</strong> automatically using your UPI ID entered above.
+                    2. When their order is cooked, the runner takes the hot food up to their room door.
                     <br />
-                    When a student scans the QR code or clicks &quot;Open Installed UPI App&quot; on mobile, Google Pay / PhonePe / Paytm opens with your UPI ID and the <strong>exact rupee bill amount already filled in</strong>!
+                    3. The runner collects payment directly at their door via <strong>Cash</strong> or by showing their <strong>UPI QR code on their phone</strong>.
+                    <br />
+                    4. Once delivered and collected, tap <strong>&quot;1-Click: Mark Delivered &amp; Completed&quot;</strong> in your admin queue!
                   </p>
                 </div>
               </div>

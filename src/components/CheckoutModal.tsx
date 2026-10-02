@@ -1,24 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import QRCode from 'qrcode';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   X,
   CreditCard,
-  QrCode,
-  Smartphone,
   CheckCircle2,
   AlertCircle,
   ArrowRight,
-  ExternalLink,
   MessageSquare,
-  ShieldCheck,
-  Copy,
-  Check,
 } from 'lucide-react';
-import { OrderItem, DeliveryType, PaymentMethod, Order } from '@/lib/types';
-import { formatINR, generateUPILink } from '@/lib/utils';
+import { OrderItem, DeliveryType, Order } from '@/lib/types';
+import { formatINR } from '@/lib/utils';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -26,9 +19,9 @@ interface CheckoutModalProps {
   items: OrderItem[];
   deliveryType: DeliveryType;
   deliveryFee: number;
-  upiId: string;
-  upiName: string;
-  adminPhone: string;
+  upiId?: string;
+  upiName?: string;
+  adminPhone?: string;
   onOrderSuccess: (order: Order, adminWhatsAppUrl: string) => void;
 }
 
@@ -38,9 +31,6 @@ export default function CheckoutModal({
   items,
   deliveryType,
   deliveryFee,
-  upiId,
-  upiName,
-  adminPhone,
   onOrderSuccess,
 }: CheckoutModalProps) {
   const router = useRouter();
@@ -50,12 +40,8 @@ export default function CheckoutModal({
   const [roomNumber, setRoomNumber] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [notes, setNotes] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('upi');
-  const [paymentRef, setPaymentRef] = useState('');
-  const [copied, setCopied] = useState(false);
 
   // UI flow states
-  const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
@@ -65,26 +51,7 @@ export default function CheckoutModal({
   const actualDeliveryFee = deliveryType === 'room' ? deliveryFee : 0;
   const grandTotal = subtotal + actualDeliveryFee;
 
-  // Generate dynamic UPI QR Code
-  useEffect(() => {
-    if (isOpen && upiId && grandTotal > 0) {
-      const upiUrl = generateUPILink(upiId, upiName, grandTotal, 'MIDNIGHT');
-      QRCode.toDataURL(upiUrl, {
-        width: 240,
-        margin: 1,
-        color: {
-          dark: '#0f172a',
-          light: '#ffffff',
-        },
-      })
-        .then((url) => setQrDataUrl(url))
-        .catch((err) => console.error('QR code generation error:', err));
-    }
-  }, [isOpen, upiId, upiName, grandTotal]);
-
   if (!isOpen) return null;
-
-  const upiIntentLink = generateUPILink(upiId, upiName, grandTotal, 'MIDNIGHT');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,10 +84,10 @@ export default function CheckoutModal({
           roomNumber: roomNumber.trim(),
           phoneNumber: cleanPhone,
           notes: notes.trim(),
-          deliveryType,
+          deliveryType: 'room',
           items,
-          paymentMethod,
-          paymentRef: paymentRef.trim() || undefined,
+          paymentMethod: 'cash_on_delivery',
+          paymentRef: undefined,
         }),
       });
 
@@ -147,12 +114,12 @@ export default function CheckoutModal({
         <div className="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
           <div>
             <h3 className="text-lg font-bold text-white">
-              {createdOrder ? 'Order Confirmed! 🎉' : 'Checkout & Delivery'}
+              {createdOrder ? 'Order Confirmed! 🎉' : 'Room Delivery Details'}
             </h3>
             <p className="text-xs text-slate-400">
               {createdOrder
                 ? `Order #${createdOrder.id} is queued for kitchen prep`
-                : `${deliveryType === 'room' ? (actualDeliveryFee > 0 ? `Room Delivery (+₹${actualDeliveryFee})` : 'FREE Room Delivery 🚀') : 'Hostel Pickup'} • ${formatINR(grandTotal)}`}
+                : `Room Delivery • Pay ${formatINR(grandTotal)} upon arrival at door`}
             </p>
           </div>
           {!createdOrder && (
@@ -189,14 +156,18 @@ export default function CheckoutModal({
               <div className="flex justify-between">
                 <span className="text-slate-400">Destination:</span>
                 <span className="font-bold text-amber-300">
-                  {createdOrder.deliveryType === 'room'
-                    ? `Room Delivery to ${createdOrder.roomNumber}`
-                    : 'Hostel Pickup'}
+                  Room Delivery to {createdOrder.roomNumber}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Total Paid:</span>
-                <span className="font-black text-emerald-400 text-sm">
+                <span className="text-slate-400">Payment:</span>
+                <span className="font-semibold text-emerald-400">
+                  Pay at Room Door (Cash / UPI)
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Amount Due:</span>
+                <span className="font-black text-amber-400 text-sm">
                   {formatINR(createdOrder.total)}
                 </span>
               </div>
@@ -297,120 +268,39 @@ export default function CheckoutModal({
               />
             </div>
 
-            {/* Payment Section (Online Payment Only) */}
+            {/* Payment at Room Door Section */}
             <div className="pt-2 border-t border-slate-800 space-y-3">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
-                  <QrCode className="w-4 h-4 text-amber-400" />
-                  <span>Online Payment (UPI Only)</span>
+                  <CreditCard className="w-4 h-4 text-emerald-400" />
+                  <span>Payment at Room Door</span>
                 </label>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                  Instant Verification
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                  Pay When Delivered 🚪
                 </span>
               </div>
 
-              {/* Informational Note */}
-              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-start space-x-2.5 text-xs text-amber-200/90 leading-relaxed">
-                <span className="text-base shrink-0 leading-none mt-0.5">📌</span>
-                <div>
-                  <span className="font-bold text-amber-300 block mb-0.5">Online Payment Only</span>
-                  <span className="text-slate-300 text-[11px]">
-                    We accept online payment only via UPI (GPay, PhonePe, Paytm). No cash on delivery. Your order is queued and prepared hot right after payment verification.
-                  </span>
-                </div>
-              </div>
-
-              {/* UPI Payment Box */}
-              <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 space-y-3 text-center">
-                {/* 1-Tap UPI App Button for Mobile Phone Users */}
-                <div className="pb-1">
-                  <a
-                    href={upiIntentLink}
-                    className="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-xl flex items-center justify-center space-x-2 shadow-lg shadow-emerald-500/25 active:scale-[0.98] transition-all text-xs sm:text-sm"
-                  >
-                    <Smartphone className="w-4 h-4 shrink-0" />
-                    <span>Pay with UPI App (GPay / PhonePe / Paytm)</span>
-                    <ExternalLink className="w-3.5 h-3.5 ml-1 opacity-80" />
-                  </a>
-                  <p className="text-[10px] text-slate-400 mt-1.5">
-                    💡 Paying on this phone? Tap the green button to open your installed UPI app directly!
-                  </p>
-                </div>
-
-                <div className="relative flex items-center justify-center my-1">
-                  <div className="border-t border-slate-800 w-full" />
-                  <span className="bg-slate-950 px-2.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest absolute">
-                    or scan QR / copy UPI ID
-                  </span>
-                </div>
-
-                <div className="flex flex-col items-center pt-1">
-                  {qrDataUrl ? (
-                    <div className="p-2.5 bg-white rounded-2xl shadow-md inline-block">
-                      <img
-                        src={qrDataUrl}
-                        alt="UPI Payment QR"
-                        className="w-36 h-36 object-contain mx-auto"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-36 h-36 bg-slate-900 rounded-2xl flex items-center justify-center text-xs text-slate-500">
-                      Generating QR...
-                    </div>
-                  )}
-
-                  {/* UPI ID with Copy Button */}
-                  <div className="mt-2.5 flex items-center justify-center space-x-2">
-                    <span className="text-xs text-slate-400">UPI ID:</span>
-                    <span className="font-mono text-amber-400 font-bold text-xs bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
-                      {upiId}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (typeof navigator !== 'undefined' && navigator.clipboard) {
-                          navigator.clipboard.writeText(upiId);
-                          setCopied(true);
-                          setTimeout(() => setCopied(false), 2000);
-                        }
-                      }}
-                      className="p-1 text-slate-400 hover:text-white bg-slate-900 hover:bg-slate-800 rounded-lg border border-slate-800 text-[10px] flex items-center space-x-1 px-2 transition-colors"
-                    >
-                      {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                      <span>{copied ? 'Copied!' : 'Copy'}</span>
-                    </button>
+              {/* Informational Card */}
+              <div className="p-4 bg-gradient-to-br from-emerald-500/10 via-slate-900 to-slate-950 border border-emerald-500/30 rounded-2xl space-y-2.5">
+                <div className="flex items-start space-x-3">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 text-lg">
+                    💵
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white">
+                      Pay When Runner Reaches Your Room
+                    </h4>
+                    <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
+                      No upfront online payment required! You can pay comfortably by <strong>UPI (GPay / PhonePe / Paytm scanner on runner&apos;s phone)</strong> or in <strong>Cash</strong> when the food arrives hot at your room door.
+                    </p>
                   </div>
                 </div>
 
-                {/* Optional UTR / Reference */}
-                <div className="text-left pt-2 border-t border-slate-900">
-                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">
-                    UPI Transaction ID / UTR <span className="text-slate-500 font-normal">(Optional, helps instant verification)</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 12-digit UTR or last 4 digits"
-                    value={paymentRef}
-                    onChange={(e) => setPaymentRef(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                  />
+                <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+                  <span className="text-slate-400">Total payable at door:</span>
+                  <span className="text-base font-black text-amber-400">{formatINR(grandTotal)}</span>
                 </div>
               </div>
-            </div>
-
-            {/* Quick Demo Pay Helper */}
-            <div className="flex items-center justify-between text-[11px] text-slate-400 bg-slate-950/40 p-2.5 rounded-xl border border-slate-800/60">
-              <span className="flex items-center space-x-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Zero-friction 8-day hostel checkout</span>
-              </span>
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('mock_paid')}
-                className="text-amber-400 hover:underline font-semibold"
-              >
-                Instant Mock Pay ⚡
-              </button>
             </div>
 
             {/* Submit Button */}
@@ -418,13 +308,13 @@ export default function CheckoutModal({
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-4 bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black rounded-2xl flex items-center justify-center space-x-2 shadow-xl shadow-amber-500/25 active:scale-[0.98] transition-all disabled:opacity-50"
+                className="w-full py-4 bg-gradient-to-r from-emerald-500 via-amber-400 to-orange-500 hover:from-emerald-400 hover:to-orange-400 text-slate-950 font-black rounded-2xl flex items-center justify-center space-x-2 shadow-xl shadow-amber-500/25 active:scale-[0.98] transition-all disabled:opacity-50"
               >
                 {loading ? (
-                  <span>Securing Midnight Order...</span>
+                  <span>Confirming Room Delivery Order...</span>
                 ) : (
                   <>
-                    <span>Place Order</span>
+                    <span>Confirm Order • Pay at Room</span>
                     <span>•</span>
                     <span>{formatINR(grandTotal)}</span>
                     <ArrowRight className="w-4 h-4 ml-1" />

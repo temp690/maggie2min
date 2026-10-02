@@ -190,16 +190,12 @@ export default function OrderTrackingPage() {
               className={`inline-block text-[10px] font-bold uppercase px-2 py-0.5 rounded-full mt-1 border ${
                 order.paymentStatus === 'paid'
                   ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                  : isPendingVerification
-                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/30 animate-pulse'
-                  : 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30'
+                  : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
               }`}
             >
               {order.paymentStatus === 'paid'
-                ? '✓ Paid & Verified'
-                : isPendingVerification
-                ? '⏳ Awaiting Verification'
-                : 'Pay on Delivery'}
+                ? '✓ Paid & Received'
+                : '💵 Pay at Room Door'}
             </span>
           </div>
         </div>

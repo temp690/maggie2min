@@ -100,37 +100,26 @@
       "description": "Warm, creamy and saucy pasta cooked fresh in the hostel setup",
       "items": [
         {
-          "id": "item-midnight-pasta",
-          "name": "Midnight Masala / Red Pasta",
+          "id": "item-cheese-pasta",
+          "name": "Cheese Pasta",
+          "basePrice": 60,
+          "category": "pasta",
+          "available": true,
+          "tag": "Cheesy Delight",
+          "image": "🧀",
+          "description": "Creamy, rich and melted cheese pasta cooked fresh for midnight hunger.",
+          "addons": []
+        },
+        {
+          "id": "item-masala-penne",
+          "name": "Masala Penne",
           "basePrice": 50,
           "category": "pasta",
           "available": true,
-          "tag": "Chef Special",
+          "tag": "Hostel Hit",
           "image": "🍝",
-          "description": "Tangy and savory macaroni pasta tossed in rich tomato herbs and spices.",
-          "addons": [
-            {
-              "id": "addon-cheese-pasta-10",
-              "name": "Melted Cheese Slice",
-              "price": 10,
-              "type": "topping",
-              "icon": "🧀"
-            },
-            {
-              "id": "addon-flakes-pasta-5",
-              "name": "Oregano & Chili Flakes",
-              "price": 5,
-              "type": "flavor",
-              "icon": "🌿"
-            },
-            {
-              "id": "addon-masala-pasta-3",
-              "name": "Extra Magic Masala",
-              "price": 3,
-              "type": "flavor",
-              "icon": "🧂"
-            }
-          ]
+          "description": "Desi spicy tangy masala penne pasta tossed in tomato herbs and spices.",
+          "addons": []
         }
       ]
     }

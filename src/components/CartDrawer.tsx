@@ -140,48 +140,20 @@ export default function CartDrawer({
         {/* Delivery Mode & Bill Footer */}
         {items.length > 0 && (
           <div className="p-4 bg-midnight-950 border-t border-slate-800 space-y-3.5">
-            {/* Delivery Type Selector */}
-            <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
-                Delivery Preference
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => onSetDeliveryType('room')}
-                  className={`p-2.5 rounded-xl border text-left transition-all ${
-                    deliveryType === 'room'
-                      ? 'bg-amber-500/15 border-amber-500 text-amber-300 shadow-sm'
-                      : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:border-slate-700'
-                  }`}
-                >
-                  <div className="flex items-center space-x-1.5 font-bold text-xs">
-                    <DoorClosed className="w-4 h-4 text-amber-400" />
-                    <span>Room Delivery</span>
-                  </div>
-                  <span className="text-[10px] text-emerald-400 font-semibold block mt-0.5">
-                    {deliveryFee > 0 ? `Straight to your door (+₹${deliveryFee})` : 'Straight to your door (FREE)'}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => onSetDeliveryType('pickup')}
-                  className={`p-2.5 rounded-xl border text-left transition-all ${
-                    deliveryType === 'pickup'
-                      ? 'bg-amber-500/15 border-amber-500 text-amber-300 shadow-sm'
-                      : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:border-slate-700'
-                  }`}
-                >
-                  <div className="flex items-center space-x-1.5 font-bold text-xs">
-                    <MapPin className="w-4 h-4 text-emerald-400" />
-                    <span>Hostel Pickup</span>
-                  </div>
-                  <span className="text-[10px] text-emerald-400 font-semibold block mt-0.5">
-                    FREE (Pick up at {pickupLocation.split(',')[0]})
-                  </span>
-                </button>
+            {/* Room Delivery Info */}
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="p-2 bg-amber-500/20 rounded-xl text-amber-400">
+                  <DoorClosed className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-white block">Room Delivery Only</span>
+                  <span className="text-[10px] text-amber-300/90">Direct to your hostel room door</span>
+                </div>
               </div>
+              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                {deliveryFee > 0 ? `+${formatINR(deliveryFee)}` : 'FREE 🚀'}
+              </span>
             </div>
 
             {/* Price Breakdown */}
@@ -191,19 +163,15 @@ export default function CartDrawer({
                 <span className="font-semibold text-slate-200">{formatINR(subtotal)}</span>
               </div>
               <div className="flex justify-between text-slate-400">
-                <span>Delivery Fee</span>
-                {deliveryType === 'room' ? (
-                  deliveryFee > 0 ? (
-                    <span className="font-semibold text-amber-400">+{formatINR(deliveryFee)}</span>
-                  ) : (
-                    <span className="font-semibold text-emerald-400 uppercase">FREE</span>
-                  )
+                <span>Room Delivery Fee</span>
+                {deliveryFee > 0 ? (
+                  <span className="font-semibold text-amber-400">+{formatINR(deliveryFee)}</span>
                 ) : (
-                  <span className="font-semibold text-emerald-400 uppercase">FREE</span>
+                  <span className="font-semibold text-emerald-400 uppercase font-bold">FREE</span>
                 )}
               </div>
               <div className="pt-2 border-t border-slate-800 flex justify-between text-sm font-black text-white">
-                <span>Total to Pay</span>
+                <span>Total to Pay at Room</span>
                 <span className="text-amber-400 text-base">{formatINR(grandTotal)}</span>
               </div>
             </div>
@@ -221,7 +189,7 @@ export default function CartDrawer({
               disabled={!canCheckout}
               className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black rounded-xl flex items-center justify-center space-x-2 shadow-lg shadow-amber-500/25 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <span>Enter Room & Payment Details</span>
+              <span>Proceed to Room Delivery</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

@@ -41,9 +41,7 @@ export function buildAdminWhatsAppMessage(order: Order, hostelName: string): str
     })
     .join('\n');
 
-  const deliveryNote = order.deliveryType === 'room'
-    ? `🚪 *Room Delivery* to *${order.roomNumber}* (+₹${order.deliveryFee})`
-    : `🏃 *Self Pickup* at Kitchen`;
+  const deliveryNote = `🚪 *Room Delivery* to *${order.roomNumber}*`;
 
   const prefNote = order.notes ? `\n📝 *Notes:* ${order.notes}` : '';
 
@@ -58,8 +56,7 @@ ${prefNote}
 ${itemsText}
 
 💰 *Total Amount:* *₹${order.total}*
-💳 *Payment:* ${order.paymentMethod.toUpperCase()} (${order.paymentStatus})
-${order.paymentRef ? `🔢 *Ref/UTR:* ${order.paymentRef}` : ''}
+💳 *Payment:* Pay at Room Door (Cash / UPI on Delivery)
 ⏰ *Time:* ${formatTimestamp(order.createdAt)}
 ------------------------------
 _Hostel Midnight Snack Delivery_`;

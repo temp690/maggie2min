@@ -118,18 +118,18 @@ export async function POST(request: Request) {
       });
     }
 
-    // 5. Delivery Fee
-    const isRoomDelivery = deliveryType === 'room';
-    const deliveryFee = isRoomDelivery ? (typeof settings.deliveryFee === 'number' ? settings.deliveryFee : 0) : 0;
+    // 5. Delivery Fee (Room Delivery Only)
+    const isRoomDelivery = true;
+    const deliveryFee = typeof settings.deliveryFee === 'number' ? settings.deliveryFee : 0;
     const grandTotal = calculatedSubtotal + deliveryFee;
 
     // 6. Payment Status handling
-    // When UPI payment is made, mark as 'pending_verification' until admin verifies on GPay/PhonePe!
-    let paymentStatus: any = 'pending_verification';
+    // Payment is made upon room delivery (Cash / UPI) -> mark as 'cod_verified'
+    let paymentStatus: any = 'cod_verified';
     if (paymentMethod === 'mock_paid') {
       paymentStatus = 'paid';
-    } else if (paymentMethod === 'cash_on_delivery') {
-      paymentStatus = 'cod_verified';
+    } else if (paymentMethod === 'upi') {
+      paymentStatus = 'pending_verification';
     }
 
     // 7. Create Order
@@ -138,14 +138,14 @@ export async function POST(request: Request) {
       roomNumber: roomNumber.trim(),
       phoneNumber: cleanPhone,
       notes: (notes || '').trim(),
-      deliveryType: isRoomDelivery ? 'room' : 'pickup',
+      deliveryType: 'room',
       deliveryFee,
       items: verifiedItems,
       subtotal: calculatedSubtotal,
       total: grandTotal,
       status: 'received',
       paymentStatus,
-      paymentMethod: paymentMethod || 'upi',
+      paymentMethod: paymentMethod || 'cash_on_delivery',
       paymentRef: paymentRef ? paymentRef.trim() : undefined,
     });
 

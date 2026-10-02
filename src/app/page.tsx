@@ -173,7 +173,7 @@ export default function Storefront() {
                 </span>
               </h1>
               <p className="text-xs text-slate-400 mt-1.5 max-w-[280px] leading-relaxed">
-                Plain, Cheese & Schezwan Maggi + Midnight Pasta. Freshly cooked on the kettle and brought to your door.
+                Cheese & Masala Penne Pasta + Midnight Maggi. Freshly cooked on the kettle and delivered to your room door.
               </p>
             </div>
 
@@ -190,8 +190,10 @@ export default function Storefront() {
               </span>
             </span>
             <span className="flex items-center space-x-1.5">
-              <span className="text-slate-400 font-medium">Hostel Pickup:</span>
-              <span className="text-slate-300 font-semibold">Available</span>
+              <span className="text-amber-400 font-black">Payment:</span>
+              <span className="text-amber-300 font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
+                Pay at Room Door 🚪
+              </span>
             </span>
           </div>
         </section>

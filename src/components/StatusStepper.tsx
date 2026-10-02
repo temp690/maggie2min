@@ -29,10 +29,10 @@ export default function StatusStepper({
   const steps: StepInfo[] = [
     {
       key: 'received',
-      title: 'Order Received',
+      title: 'Order Confirmed',
       desc: isPendingVerification
-        ? 'Awaiting kitchen payment check on UPI'
-        : 'Payment verified & order queued',
+        ? 'Awaiting kitchen payment check'
+        : 'Order confirmed & queued in kitchen',
       icon: <ClipboardCheck className="w-5 h-5" />,
     },
     {
@@ -43,17 +43,14 @@ export default function StatusStepper({
     },
     {
       key: 'on_the_way',
-      title: deliveryType === 'room' ? 'On The Way to Room' : 'Ready for Pickup',
-      desc:
-        deliveryType === 'room'
-          ? 'Runner is heading up the hostel stairs 🏃‍♂️'
-          : 'Hot & ready on the kitchen counter!',
+      title: 'On The Way to Your Room',
+      desc: 'Runner is heading up the hostel stairs 🏃‍♂️',
       icon: <Bike className="w-5 h-5" />,
     },
     {
       key: 'delivered',
-      title: deliveryType === 'room' ? 'Arrived at Door' : 'Collected',
-      desc: 'Enjoy your midnight meal & happy studying! 🍜',
+      title: 'Arrived at Room Door',
+      desc: 'Food delivered! Please pay at the door (Cash / UPI) 🍜',
       icon: <DoorOpen className="w-5 h-5" />,
     },
   ];
@@ -82,29 +79,13 @@ export default function StatusStepper({
 
   return (
     <div className="bg-midnight-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden space-y-5">
-      {/* Payment Verification Banner */}
-      {isPendingVerification ? (
-        <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start space-x-3 text-amber-200 animate-pulse">
-          <div className="p-2 bg-amber-500/20 rounded-xl text-amber-400 shrink-0">
-            <Clock className="w-5 h-5 animate-spin" />
-          </div>
-          <div>
-            <h5 className="text-xs font-bold text-amber-300">
-              Payment Verification in Progress
-            </h5>
-            <p className="text-[11px] text-amber-200/90 mt-0.5 leading-relaxed">
-              We received your payment details {paymentRef ? `(UTR: ${paymentRef})` : ''}. The kitchen is verifying the transaction before boiling the water. This page will update automatically!
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-3 flex items-center space-x-2.5 text-emerald-200 text-xs">
-          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-          <span className="font-semibold text-emerald-300">
-            ✓ Payment Verified by Kitchen • Order Active
-          </span>
-        </div>
-      )}
+      {/* Payment at Room Banner */}
+      <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-3 flex items-center space-x-2.5 text-emerald-200 text-xs">
+        <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+        <span className="font-semibold text-emerald-300">
+          ✓ Order Active • Room Delivery (Pay upon delivery via Cash / UPI)
+        </span>
+      </div>
 
       {/* Glow backdrop */}
       <div className="absolute -top-20 -right-20 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
